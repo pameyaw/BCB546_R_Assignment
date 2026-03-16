@@ -1,0 +1,305 @@
+---
+title: "BCB546 R Assignment"
+author: "Prince Ameyaw"
+date: "2026-03-16"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# --- Data Acquisition ---
+# Note: This script uses relative paths. 
+# Ensure the .txt files are in the same directory as this Rmd file.
+```
+
+```{r}
+## Load library
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+# Load data 
+
+## load fang_et_al_genotypes.txt file
+genoty_data <- read_tsv("fang_et_al_genotypes.txt")
+file.size("fang_et_al_genotypes.txt")
+
+## load snp_position.txt file 
+snp_pos_data <- read_tsv("snp_position.txt")
+file.size("snp_position.txt")
+```
+
+```{r}
+# data inspection; Verify data integrity, dimensions, and structure before processing
+
+## fang_et_al_genotypes.txt
+str(genoty_data)
+dim(genoty_data)
+head(genoty_data)
+tail(genoty_data)
+
+## snp_position.txt
+str(snp_pos_data)
+dim(snp_pos_data)
+head(snp_pos_data)
+tail(snp_pos_data)
+```
+
+```{r}
+# data processing 
+
+## inspecting the genotype data group i will be using to subset the data into maize and teosinte
+
+### i used `unique` to Identify available groups to ensure correct filtering
+unique(genoty_data$Group) 
+
+## selecting maize data
+maize_genotypes <- genoty_data %>% filter(Group == c("ZMMIL", "ZMMLR", "ZMMMR" ))
+head(maize_genotypes)
+dim(maize_genotypes)
+unique(maize_genotypes$Group)
+
+## selecting teosinte data
+teosinte_genotypes <- genoty_data %>% filter(Group == c("ZMPBA", "ZMPIL", "ZMPJA"))
+head(teosinte_genotypes) 
+dim(teosinte_genotypes)
+unique(teosinte_genotypes$Group)
+```
+
+```{r}
+# transposing genotype files
+## I transposed the data so that SNP_IDs become rows, allowing to join with the position map.
+
+### maize genotypes
+maize_genotypes_transposed <- t(maize_genotypes)
+dim(maize_genotypes_transposed)
+dim(maize_genotypes)
+maize_genotypes_transposed <- as.data.frame(maize_genotypes_transposed)
+colnames(maize_genotypes_transposed) <- maize_genotypes_transposed[1, ] # Set header to Sample IDs
+maize_genotypes_transposed <- maize_genotypes_transposed[-1, ] # Remove the extra header row
+maize_genotypes_transposed$SNP_ID <- rownames(maize_genotypes_transposed)
+rownames(maize_genotypes_transposed) <- NULL
+head(maize_genotypes_transposed)
+
+
+### teosinte genotypes Same logic as maize above
+teosinte_genotypes_transposed <- t(teosinte_genotypes)
+teosinte_genotypes_transposed <- as.data.frame(teosinte_genotypes_transposed)
+colnames(teosinte_genotypes_transposed) <- teosinte_genotypes_transposed[1, ]
+teosinte_genotypes_transposed <- teosinte_genotypes_transposed[-1, ]
+teosinte_genotypes_transposed$SNP_ID <- rownames(teosinte_genotypes_transposed)
+rownames(teosinte_genotypes_transposed) <- NULL
+```
+
+```{r}
+# Merging 
+
+## Select only the essential mapping columns (ID, Chr, Pos)
+snp_pos_data_needed_columns <- snp_pos_data %>% select(SNP_ID, Chromosome, Position)
+```
+
+```{r}
+# joining genotype data and snp position data 
+
+## maize genotypes and snp position (i used `dim` to qc the files to make sure they are properly joined)
+merged_maize_geno_snp <- inner_join(snp_pos_data_needed_columns, maize_genotypes_transposed, by = "SNP_ID")
+dim(merged_maize_geno_snp)
+dim(snp_pos_data_needed_columns)
+dim(maize_genotypes_transposed)
+
+## teosinte genotypes and snp position
+merged_teosinte_geno_snp <- inner_join(snp_pos_data_needed_columns, teosinte_genotypes_transposed, by = "SNP_ID")
+dim(merged_teosinte_geno_snp)
+dim(snp_pos_data_needed_columns)
+dim(teosinte_genotypes_transposed)
+```
+
+```{r}
+# maize: 10 files (1 for each chromosome) with SNPs ordered based on increasing position values and with missing data encoded by this symbol: ?
+
+## Filter for chromosomes 1 through 10
+maize_subset <- merged_maize_geno_snp[merged_maize_geno_snp$Chromosome %in% 1:10, ]
+
+# Split the data frame into a LIST of 10 data frames (one per chromosome)
+maize_list <- split(maize_subset, maize_subset$Chromosome)
+
+# Define the  function, sort and define filename for saving
+process_and_save_per_chr_increase <- function(chr) {
+  df <- maize_list[[chr]]
+  df_sorted <- df[order(as.numeric(df$Position)), ]
+  file_name <- paste0("maize_chr", chr, "_increasing.txt")
+  write.table(df_sorted, file = `file_name`, sep = "\t", row.names = FALSE, quote = FALSE)
+}
+# use Apply to run through all chromosome lists
+lapply(names(maize_list), process_and_save_per_chr_increase)
+```
+
+```{r}
+# maize: 10 files (1 for each chromosome) with SNPs ordered based on decreasing position values and with missing data encoded by this symbol: -
+
+process_and_save_per_chr_decrease <- function(chr) {
+  df <- maize_list[[chr]]
+   # Replace "??" with "-" across the entire data frame
+  df[df == "?/?"] <- "-/-"
+  df_sorted <- df[order(as.numeric(df$Position), decreasing = TRUE), ]
+  file_name <- paste0("maize_chr", chr, "_decreasing.txt")
+  write.table(df_sorted, file = `file_name`, sep = "\t", row.names = FALSE, quote = FALSE)
+}
+# use Apply to run through all chromosome lists
+lapply(names(maize_list), process_and_save_per_chr_decrease)
+```
+
+
+```{r}
+# teosinte (same logic as above)
+# teosinte: 10 files (1 for each chromosome) with SNPs ordered based on increasing position values and with missing data encoded by this symbol: ?
+
+## Filter for chromosomes 1 through 10
+teosinte_subset <- merged_teosinte_geno_snp[merged_teosinte_geno_snp$Chromosome %in% 1:10, ]
+
+# Split the data frame into a LIST of 10 data frames (one per chromosome)
+teosinte_list <- split(teosinte_subset, teosinte_subset$Chromosome)
+process_and_save_per_chr_increase <- function(chr) {
+  df <- teosinte_list[[chr]]
+  df_sorted <- df[order(as.numeric(df$Position)), ]
+  file_name <- paste0("teosinte_chr", chr, "_increasing.txt")
+  write.table(df_sorted, file = `file_name`, sep = "\t", row.names = FALSE, quote = FALSE)
+}
+# use Apply to run through all chromosome lists
+lapply(names(teosinte_list), process_and_save_per_chr_increase)
+```
+
+```{r}
+# teosinte files (1 for each chromosome) with SNPs ordered based on decreasing position values and with missing data encoded by this symbol: -
+
+process_and_save_per_chr_decrease <- function(chr) {
+  df <- teosinte_list[[chr]]
+   # Replace "??" with "-" across the entire data frame
+  df[df == "?/?"] <- "-/-"
+  df_sorted <- df[order(as.numeric(df$Position), decreasing = TRUE), ]
+  file_name <- paste0("teosinte_chr", chr, "_decreasing.txt")
+  write.table(df_sorted, file = `file_name`, sep = "\t", row.names = FALSE, quote = FALSE)
+}
+# use Apply to run through all chromosome lists
+lapply(names(teosinte_list), process_and_save_per_chr_decrease)
+```
+
+
+```{r}
+# Visuaization
+
+## Prepare unified dataset for plotting
+maize_data <- merged_maize_geno_snp %>% mutate(Group = "Maize")
+teosinte_data <- merged_teosinte_geno_snp %>% mutate(Group = "Teosinte")
+
+### i mae these column the same type of variable to facilitate with combining the dataset
+maize_data <- maize_data %>%
+  mutate(across(c(SNP_ID, Chromosome, Position), as.character), Group = "Maize")
+
+teosinte_data <- teosinte_data %>%
+  mutate(across(c(SNP_ID, Chromosome, Position), as.character), Group = "Teosinte")
+
+# Combine datasets
+combined_data <- bind_rows(maize_data, teosinte_data)
+
+# Remove rows with unknown chromosome/position
+combined_data <- combined_data %>%
+  filter(!is.na(Chromosome) & Chromosome != "unknown") %>%
+  mutate(Chromosome = factor(Chromosome, levels = c(1:10)))
+
+# Visualization 1: SNPs per Chromosome 
+
+## Question: What is the distribution of SNPs on and across chromosomes? ##Are there more SNP positions in maize or teosinte individuals?
+
+ggplot(combined_data, aes(x = Chromosome, fill = Group)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Distribution of SNPs across Chromosomes",
+       x = "Chromosome Number",
+       y = "Number of SNP Positions",
+       fill = "Group") +
+  theme_classic()
+
+# Visualization 2: Missing Data and Heterozygosity 
+# Question: What is the proportion of homozygous, heterozygous, and missing data?
+
+# Reshape data to long format for analysis
+# I exclude the metadata columns to focus on sample genotypes
+genotype_data <- combined_data %>%
+  select( -SNP_ID, -Chromosome, -Position) %>%
+  pivot_longer(cols = -Group, names_to = "Sample", values_to = "Genotype")
+
+# Define genotype categories
+genotype_summary <- genotype_data %>%
+  mutate(Status = case_when(
+    Genotype == "?/?" ~ "Missing",
+    substr(Genotype, 1, 1) == substr(Genotype, 3, 3) ~ "Homozygous",
+    TRUE ~ "Heterozygous"
+  ))
+
+# Plotting the proportions normalized to 100%
+ggplot(genotype_summary, aes(x = Group, fill = Status)) +
+  geom_bar(position = "fill") +
+  labs(title = "Proportion of Genotype Status by Group",
+       x = "Group",
+       y = "Proportion",
+       fill = "Status") +
+  scale_y_continuous(labels = scales::percent) +
+  theme_classic()
+
+# visualization 3 
+## Plot by individual samples (top 50 for readability)
+sample_subset <- genotype_summary %>%
+  filter(Sample %in% unique(genotype_summary$Sample)[1:50])
+
+ggplot(sample_subset, aes(x = Sample, fill = Status)) +
+  geom_bar(position = "fill") +
+  coord_flip() +
+  labs(title = "Genotype Status for Selected Samples",
+       x = "Sample ID",
+       y = "Proportion",
+       fill = "Status") +
+  scale_y_continuous(labels = scales::percent) +
+  theme_classic()
+
+# visualization 4
+## Detailed view of Homozygous, Heterozygous, and Missing data per chromosome, side-by-side for Maize and Teosinte.
+combined_long <- combined_data %>%
+  pivot_longer(cols = -c(SNP_ID, Chromosome, Position, Group), 
+               names_to = "Sample", 
+               values_to = "Genotype") %>%
+  mutate(Status = case_when(
+    Genotype == "?/?" ~ "Missing",
+    substr(Genotype, 1, 1) == substr(Genotype, 3, 3) ~ "Homozygous",
+    TRUE ~ "Heterozygous"
+  ))
+
+# 2. Plot using the new 'combined_long' object
+ggplot(combined_long, aes(x = factor(Chromosome), fill = Status)) +
+  geom_bar(position = "fill") +
+  facet_grid(~Group) + 
+  scale_fill_manual(values = c("Homozygous" = "#377eb8", 
+                               "Heterozygous" = "#ff7f00", 
+                               "Missing" = "grey80")) +
+  theme_classic() +
+  labs(title = "Homozygous vs Heterozygous SNPs per Chromosome",
+       x = "Chromosome",
+       y = "Proportion",
+       fill = "Genotype Status")
+```
+
+
+
+
+
+
+
+
+
+
+
