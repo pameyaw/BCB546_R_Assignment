@@ -15,11 +15,13 @@ This project performs a genome-wide analysis of SNP variation between domesticat
 
 * The analysis generates a total of 40 output files, organized by taxon and genomic ordering
 
-Taxon,Ordering,Missing Data Symbol,File Count,Filename Pattern
-Maize,Increasing,?,10,maize_chr[1-10]_increasing.txt
-Maize,Decreasing,-,10,maize_chr[1-10]_decreasing.txt
-Teosinte,Increasing,?,10,teosinte_chr[1-10]_increasing.txt
-Teosinte,Decreasing,-,10,teosinte_chr[1-10]_decreasing.txt
+
+| Taxon  | Ordering  | Missing Data Symbol | File Count  | Filename Pattern |
+|---|---|---|---|---|
+| Maize  | Increasing  | ? | 10  | maize_chr[1-10]_increasing.txt |
+| Maize  | decreasing  | ? | 10  | maize_chr[1-10]_decreasing.txt |
+| Teosinte  | Increasing  | ? | 10  | teosinte_chr[1-10]_increasing.txt |
+| Teosinte  | decreasing  | ? | 10  | teosinte_chr[1-10]_decreasing.txt |
 
 Each group contains 10 files, one for each of the 10 chromosomes of Zea mays:
 
