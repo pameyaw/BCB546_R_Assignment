@@ -1,4 +1,3 @@
----
 # BCB 546: R Assignment - Maize and Teosinte SNP Analysis
 
 ## Project Overview
@@ -7,12 +6,12 @@ This project performs a genome-wide analysis of SNP variation between domesticat
 
 ## Directory Structure and File Descriptions
 
-* **`BCB546_R_Assignment.Rmd`**: The primary R Markdown script containing the code for data processing and visualization.
-* **`BCB546_R_Assignment.pdf`**: The final knitted report.
-* **`fang_et_al_genotypes.txt`**: Raw genotype data for various Zea mays groups.
-* **`snp_position.txt`**: Metadata containing physical coordinates (Chromosome and Position) for each SNP.
-* **`README.md`**: Project documentation (this file).
-* **`output/`** folder (Containing your 40 organized text files), Details below
+* `BCB546_R_Assignment.Rmd`: The primary R Markdown script containing the code for data processing and visualization.
+* `BCB546_R_Assignment.pdf`: The final knitted report.
+* `fang_et_al_genotypes.txt`: Raw genotype data for various Zea mays groups.
+* `snp_position.txt`: Metadata containing physical coordinates (Chromosome and Position) for each SNP.
+* `README.md`: Project documentation (this file).
+* `output/` folder (Containing your 40 organized text files), Details below
 
 * The analysis generates a total of 40 output files, organized by taxon and genomic ordering
 
