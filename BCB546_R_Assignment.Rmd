@@ -225,6 +225,8 @@ ggplot(combined_data, aes(x = Chromosome, fill = Group)) +
        fill = "Group") +
   theme_classic()
 
+ggsave("snp_distribution.png", width = 7, height = 5)
+
 # Visualization 2: Missing Data and Heterozygosity 
 # Question: What is the proportion of homozygous, heterozygous, and missing data?
 
@@ -251,6 +253,7 @@ ggplot(genotype_summary, aes(x = Group, fill = Status)) +
        fill = "Status") +
   scale_y_continuous(labels = scales::percent) +
   theme_classic()
+ggsave("genotype_proportions.png", width = 6, height = 5)
 
 # visualization 3 
 ## Plot by individual samples (top 50 for readability)
@@ -266,6 +269,7 @@ ggplot(sample_subset, aes(x = Sample, fill = Status)) +
        fill = "Status") +
   scale_y_continuous(labels = scales::percent) +
   theme_classic()
+ggsave("Genotype_Status_Selected_Samples.png", width = 10, height = 6)
 
 # visualization 4
 ## Detailed view of Homozygous, Heterozygous, and Missing data per chromosome, side-by-side for Maize and Teosinte.
@@ -279,7 +283,7 @@ combined_long <- combined_data %>%
     TRUE ~ "Heterozygous"
   ))
 
-# 2. Plot using the new 'combined_long' object
+#  Plot using the new 'combined_long' object
 ggplot(combined_long, aes(x = factor(Chromosome), fill = Status)) +
   geom_bar(position = "fill") +
   facet_grid(~Group) + 
@@ -291,6 +295,7 @@ ggplot(combined_long, aes(x = factor(Chromosome), fill = Status)) +
        x = "Chromosome",
        y = "Proportion",
        fill = "Genotype Status")
+ggsave("genotype_per_chromosome.png", width = 10, height = 6)
 ```
 
 
